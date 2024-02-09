@@ -49,3 +49,27 @@ elements.pageButtons.addEventListener("click", (e) => {
         searchView.renderRecipes(state.search.result, gotoPageNumber);
     }
 });
+
+/**
+ * Жорын контроллер
+ */
+
+const controlRecipe = async () => {
+    // 1) URL - с ID-г салгаж авна.
+    const id = window.location.hash.replace("#", "");
+
+    // 2) Жорын моделийг үүсгэнэ.
+    state.recipe = new Recipe(id);
+
+    // 3) UI дэлгэцийг бэлтгэнэ.
+
+    // 4) Жороо татаж авчирна.
+    await state.recipe.getRecipe();
+    // 5) Жорыг гүйцэтгэх хугацаа болон орцыг тооцоолно.
+    state.recipe.calcTime();
+    state.recipe.calcHuniiToo();
+    // 6) Жороо дэлгэцэнд гаргана.
+    console.log(state.recipe);
+};
+
+window.addEventListener("hashchange", controlRecipe);
