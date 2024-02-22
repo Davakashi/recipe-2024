@@ -3,6 +3,13 @@ import Search from "./model/search";
 import { elements, renderLoader, clearLoader } from "./view/base";
 import * as searchView from "./view/searchView";
 import Recipe from "./model/recipe";
+import {
+    renderRecipe,
+    clearRecipe,
+    highlightSelectorRecipe,
+} from "./view/recipeView";
+import list from "./model/list";
+import * as listView from "./view/listView";
 
 /**
  *  Web app төлөв
@@ -58,18 +65,46 @@ const controlRecipe = async () => {
     // 1) URL - с ID-г салгаж авна.
     const id = window.location.hash.replace("#", "");
 
-    // 2) Жорын моделийг үүсгэнэ.
-    state.recipe = new Recipe(id);
+    // URL дээр ID байгаа эсэхийг шалгана
+    if (id) {
+        // 2) Жорын моделийг үүсгэнэ.
+        state.recipe = new Recipe(id);
 
-    // 3) UI дэлгэцийг бэлтгэнэ.
-
-    // 4) Жороо татаж авчирна.
-    await state.recipe.getRecipe();
-    // 5) Жорыг гүйцэтгэх хугацаа болон орцыг тооцоолно.
-    state.recipe.calcTime();
-    state.recipe.calcHuniiToo();
-    // 6) Жороо дэлгэцэнд гаргана.
-    console.log(state.recipe);
+        // 3) UI дэлгэцийг бэлтгэнэ.
+        clearRecipe();
+        renderLoader(elements.recipeDiv);
+        highlightSelectorRecipe(id);
+        // 4) Жороо татаж авчирна.
+        await state.recipe.getRecipe();
+        // 5) Жорыг гүйцэтгэх хугацаа болон орцыг тооцоолно.
+        clearLoader();
+        state.recipe.calcTime();
+        state.recipe.calcHuniiToo();
+        // 6) Жороо дэлгэцэнд гаргана.
+        renderRecipe(state.recipe);
+    }
 };
 
-window.addEventListener("hashchange", controlRecipe);
+["hashchange", "load"].forEach((event) =>
+    window.addEventListener(event, controlRecipe)
+);
+
+/**
+ * Найрлаганы контроллер
+ */
+
+const controlList = () => {
+    // Найрлаганы моделийг үүсгэнэ.
+    state.list = new list();
+    listView.clearItems();
+
+    // Уг модель рүү бүх найрлагыг авч хийнэ.
+    state.recipe.ingredients.forEach((n) => {
+        state.list.additem(n);
+        listView.renderItem(n);
+    });
+};
+
+elements.recipeDiv.addEventListener("click", (e) => {
+    if (e.target.matches(".recipe__btn, .recipe__btn *")) controlList();
+});
