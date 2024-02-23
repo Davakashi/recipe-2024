@@ -9,7 +9,9 @@ import {
     highlightSelectorRecipe,
 } from "./view/recipeView";
 import list from "./model/list";
+import like from "./model/like";
 import * as listView from "./view/listView";
+import * as likesView from "./view/likesView";
 
 /**
  *  Web app төлөв
@@ -81,13 +83,20 @@ const controlRecipe = async () => {
         state.recipe.calcTime();
         state.recipe.calcHuniiToo();
         // 6) Жороо дэлгэцэнд гаргана.
-        renderRecipe(state.recipe);
+        renderRecipe(state.recipe, state.likes.isLiked(id));
     }
 };
 
 ["hashchange", "load"].forEach((event) =>
     window.addEventListener(event, controlRecipe)
 );
+
+window.addEventListener("load", (e) => {
+    if (!state.likes) state.likes = new like();
+    likesView.toggleLikeMenu(state.likes.getNumberOfLikes());
+
+    state.likes.likes.forEach((like) => likesView.renderLike(like));
+});
 
 /**
  * Найрлаганы контроллер
@@ -100,11 +109,51 @@ const controlList = () => {
 
     // Уг модель рүү бүх найрлагыг авч хийнэ.
     state.recipe.ingredients.forEach((n) => {
-        state.list.additem(n);
-        listView.renderItem(n);
+        const item = state.list.additem(n);
+        listView.renderItem(item);
     });
+};
+
+/**
+ * Like контроллер
+ */
+const controlLike = () => {
+    // 1) Лайкын моделийг үүсгэнэ.
+    if (!state.likes) state.likes = new like();
+    // 2) Одоо харагдаж байгаа жорын ID-ийг олж авах
+    const currentRecipeId = state.recipe.id;
+    // 3) Энэ жорын лайкласан эсэхийг шалгах
+    if (state.likes.isLiked(currentRecipeId)) {
+        // Лайкалсан бол лайкийг болиулна
+        state.likes.deleteLike(currentRecipeId);
+        likesView.deleteLike(currentRecipeId);
+        likesView.toggleLikeBtn(false);
+    } else {
+        // Лайклаагүй бол лайклана
+        const newLike = state.likes.addLike(
+            currentRecipeId,
+            state.recipe.title,
+            state.recipe.publisher,
+            state.recipe.image_url
+        );
+
+        likesView.renderLike(newLike);
+
+        likesView.toggleLikeBtn(true);
+    }
+
+    likesView.toggleLikeMenu(state.likes.getNumberOfLikes());
 };
 
 elements.recipeDiv.addEventListener("click", (e) => {
     if (e.target.matches(".recipe__btn, .recipe__btn *")) controlList();
+    else if (e.target.matches(".recipe__love, .recipe__love *")) controlLike();
+});
+
+elements.shoppingList.addEventListener("click", (e) => {
+    const id = e.target.closest(".shopping__item").dataset.itemid;
+
+    state.list.deleteItem(id);
+
+    listView.deleteItem(id);
 });
