@@ -13,7 +13,6 @@ export default class like {
             img,
         };
 
-        this.likes.push(like);
 
         this.saveDataToLocalStorage();
 
